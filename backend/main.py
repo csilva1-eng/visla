@@ -1,11 +1,12 @@
 from fastapi import FastAPI
-# from routers import webhook, auth
-# from database import engine, Base
+from routers import webhook, auth
+from database import engine, Base
 
 app = FastAPI()
 
-# app.include_router(webhook.router)
-# app.include_router(auth.router)
+app.include_router(webhook.router)
+app.include_router(auth.router)
+app.include_router(webApp.router)
 
 @app.on_event("startup")
 async def startup():
