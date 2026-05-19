@@ -1,0 +1,208 @@
+.scada-regular {
+  font-family: "Scada", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.scada-bold {
+  font-family: "Scada", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.scada-regular-italic {
+  font-family: "Scada", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.scada-bold-italic {
+  font-family: "Scada", sans-serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: radial-gradient(circle at top left, rgba(58, 125, 68, 0.18), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(76, 33, 42, 0.08), transparent 30%),
+    linear-gradient(180deg, #E9F1F7 0%, #f5fbff 100%);
+}
+
+.screen-container {
+  position: relative;
+  width: min(760px, 100%);
+  min-height: 560px;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(24px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.screen.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.screen-card {
+  width: 100%;
+  min-height: 100%;
+  background: var(--surface);
+  border: 1px solid rgba(76, 33, 42, 0.12);
+  box-shadow: 0 24px 65px rgba(76, 33, 42, 0.08);
+  border-radius: 30px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.screen-card--narrow {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.screen-header {
+  display: grid;
+  gap: 24px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  margin-bottom: 18px;
+  padding: 10px 16px;
+  color: var(--secondary);
+  background: rgba(58, 125, 68, 0.16);
+  border-radius: 999px;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font: "Scada";
+  font-style: italic;
+  font-weight: 700;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.25rem, 3vw, 3.4rem);
+  line-height: 1.02;
+  color: var(--secondary);
+}
+
+p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.75;
+  font-size: 1rem;
+}
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.primary-btn,
+.form-submit {
+  border: none;
+  cursor: pointer;
+  background: var(--primary);
+  color: var(--accent);
+  border-radius: 18px;
+  padding: 16px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.primary-btn:hover,
+.form-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 36px rgba(58, 125, 68, 0.22);
+}
+
+.secondary-btn,
+.back-link {
+  border: 1px solid rgba(76, 33, 42, 0.15);
+  background: var(--accent);
+  color: var(--secondary);
+  border-radius: 18px;
+  padding: 16px 24px;
+  font-weight: 600;
+}
+
+.secondary-btn:hover,
+.back-link:hover {
+  background: rgba(58, 125, 68, 0.08);
+}
+
+.auth-form {
+  display: grid;
+  gap: 18px;
+}
+
+.form-field {
+  display: grid;
+  gap: 10px;
+  color: var(--secondary);
+}
+
+.form-field span {
+  font-weight: 600;
+}
+
+.form-field input {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 16px;
+  border: 1px solid rgba(76, 33, 42, 0.12);
+  padding: 14px 16px;
+  background: var(--surface-soft);
+  color: var(--secondary);
+}
+
+.form-field input:focus {
+  outline: 2px solid rgba(58, 125, 68, 0.3);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .screen-container {
+    min-height: auto;
+  }
+
+  .screen {
+    position: static;
+    transform: none;
+  }
+
+  .screen-card {
+    padding: 28px;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .primary-btn,
+  .secondary-btn,
+  .back-link {
+    width: 100%;
+  }
+}

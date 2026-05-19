@@ -1,5 +1,3 @@
-from fastapi import FastAPI, Request, Query
-from fastapi.responses import PlainTextResponse
 import os
 from dotenv import load_dotenv
 from dateutil import parser as dateparser
@@ -10,13 +8,7 @@ import re
 
 load_dotenv()
 
-app = FastAPI()
-
-
-# example link https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=17939507193037650&signature=Ab3aNHk3RKeh5NUdoFwU17gcxp37PdZlphZtqtqEyzrMaCcwin0kjMcMSTeeYu002SU6ISzGAmIeXibJksyigkmadJsMlwDxY2ebfE9etx6Cex-JTqoA573M9Ccg8wKuMzHdEqeZacsgQxIs4145dz5Jnv7mDJZRoeum7a8_zs-BhCVf4UR5gKWrcFplHB1aVlmKqd4P2x1Y6kOYz53809FIvLwiLsmJ'
-
-@app.get("/webhook")
-def verify(
+def handle_verify(
     hub_mode: str = Query(alias="hub.mode"),
     hub_challenge: str = Query(alias="hub.challenge"),
     hub_verify_token: str = Query(alias="hub.verify_token")
@@ -25,12 +17,12 @@ def verify(
         return PlainTextResponse(content=hub_challenge)
     return PlainTextResponse(status_code=403)
 
-SHAX_ID = "17841417217256759"
+SHAX_ID = os.getenv("SHAX_ID")
+#TODO THIS MIGHT NEED quotes?
 
-@app.post("/webhook")
-async def receive_message(request: Request):
+# @app.post("/webhook")
+async def handle_message(request: Request):
     body = await request.json() 
-    print(body)
 
     for entry in body.get("entry", []):
         if entry.get("id") != SHAX_ID:

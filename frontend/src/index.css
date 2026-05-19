@@ -1,0 +1,74 @@
+:root {
+  --primary: #3A7D44;
+  --secondary: #4C212A;
+  --accent: #FCFFFC;
+  --bg: #E9F1F7;
+  --surface: #FCFFFC;
+  --surface-soft: #E8F4E7;
+  --text: #4C212A;
+  --text-muted: #5B6D66;
+  --border: rgba(76, 33, 42, 0.12);
+  --shadow: rgba(76, 33, 42, 0.08) 0 20px 40px -16px;
+  --font: 'Scada', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.scada-regular {
+  font-family: "Scada", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.scada-bold {
+  font-family: "Scada", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.scada-regular-italic {
+  font-family: "Scada", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.scada-bold-italic {
+  font-family: "Scada", sans-serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body,
+input,
+button {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+p {
+  margin: 0;
+}
