@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from jose import jwt, JWTError
 import os
-from database import get_db
-from models import User
+from db.database import get_db
+from db.models import User
 
 async def get_current_user(
     authorization: str = Header(...),

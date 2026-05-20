@@ -5,6 +5,11 @@ import base64
 import requests
 from google.cloud import vision
 import re
+from fastapi import Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+import hmac, hashlib
+from db.models import User
 
 load_dotenv()
 
@@ -21,42 +26,64 @@ SHAX_ID = os.getenv("SHAX_ID")
 #TODO THIS MIGHT NEED quotes?
 
 # @app.post("/webhook")
-async def handle_message(request: Request):
-    body = await request.json() 
+async def handle_message(body: dict, instagram_id: str, db: AsyncSession):
+    
+    try:
+        messaging = body.get('entry')[0]['messaging'][0]
+        if "read" in messaging:
+            return
+        if "delivery" in messaging:
+            return
 
-    for entry in body.get("entry", []):
-        if entry.get("id") != SHAX_ID:
-            continue
-
-        for event in entry.get("messaging", []):
-            sender_id = event.get("sender", {}).get("id")
-            message = event.get("message", {})
+        if "message" not in messaging:
+            return
             
-            text = message.get("text")
-            attachments = message.get("attachments", [])
+        if messaging["message"].get("is_echo"):
+            return
+        # message_text = body.get("entry").get("messaging").get("message").get("text")
+        
+        result = await db.execute(select(User).where(User.instagram_id == str(instagram_id)))
+        user = result.scalar_one_or_none()
 
-            if sender_id:
-                if text:
-                    print(f"Message from {sender_id}: {text}")
+        if not user:
+            return f"Welcome to Visla, to get started click {generate_onboarding_link(str(instagram_id))}"
+        
+        for entry in body.get("entry", []):
+            if entry.get("id") != SHAX_ID:
+                continue
+
+            for event in entry.get("messaging", []):
+                sender_id = event.get("sender", {}).get("id")
+                message = event.get("message", {})
                 
-                for attachment in attachments:
-                    if attachment.get("type") == "ig_post":
-                        image_url = attachment.get("payload", {}).get("url")
-                        title = attachment.get("payload", {}).get("title")
+                text = message.get("text")
+                attachments = message.get("attachments", [])
 
-                        date = extract_date_from_text(title)
+                if sender_id:
+                    if text:
+                        print(f"Message from {sender_id}: {text}")
+                    
+                    for attachment in attachments:
+                        if attachment.get("type") == "ig_post":
+                            image_url = attachment.get("payload", {}).get("url")
+                            title = attachment.get("payload", {}).get("title")
 
-                        if not date:
-                            print("no date in text, trying image...")
-                            # trying to get from image
-                            date = extract_date_from_image(image_url)
-                        print(f"date foudn: {date}")
-                        # print(f"Instagram post from {sender_id}: {image_url}")
-                    if attachment.get("type") == "image":
-                        image_url = attachment.get("payload", {}).get("url")
-                        print(f"Image from {sender_id}: {image_url}")
+                            date = extract_date_from_text(title)
 
-    return {"status": "ok"}
+                            if not date:
+                                print("no date in text, trying image...")
+                                # trying to get from image
+                                date = await extract_date_from_image(image_url)
+                            return f"Date found: {date}"
+                            # print(f"Instagram post from {sender_id}: {image_url}")
+                        if attachment.get("type") == "image":
+                            image_url = attachment.get("payload", {}).get("url")
+                            print(f"Image from {sender_id}: {image_url}")
+        return ""
+        # pretty sure this doesnt actually check if the date is returned just if error thrown
+    except Exception as e:
+        print(f"Error handling message: {e}")
+        return False
 
 
 def extract_date_from_text(text: str):
@@ -81,7 +108,7 @@ def extract_date_from_text(text: str):
         return None
     return None
 
-def extract_date_from_image(image_url: str):
+async def extract_date_from_image(image_url: str):
     try:
         res = requests.get(image_url)
         content = base64.b64encode(res.content).decode("utf-8")
@@ -111,3 +138,11 @@ def extract_date_from_image(image_url: str):
         print("error: ", e)
         return None
     return None
+
+def generate_onboarding_link(instagram_id: str) -> str:
+    sig = hmac.new(os.getenv("LINK_SECRET").encode(), instagram_id.encode(), hashlib.sha256).hexdigest()[:12]
+    return f"{os.getenv('FRONTEND_URL')}/?ig_id={instagram_id}&sig={sig}"
+
+def verify_link(instagram_id: str, sig: str) -> bool:
+    expected = hmac.new(os.getenv("LINK_SECRET").encode(), instagram_id.encode(), hashlib.sha256).hexdigest()[:12]
+    return hmac.compare_digest(expected, sig)

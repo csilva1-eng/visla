@@ -1,14 +1,15 @@
-import { useState } from 'react'
-
+import api from '../api.js'
+import {useEffect} from 'react'
+import {useNavigate} from 'react-router-dom'
 function SignupScreen({ active, onBack }) {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  
 
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    alert(`Sign up submitted for ${name || 'new user'}`)
-  }
+  const handleGoogleConnect = () => {
+    const params = new URLSearchParams(window.location.search)
+    const igId = params.get('ig_id')
+    const sig = params.get("sig")
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google?ig_id=${igId}&sig=${sig}`
+ }
 
   return (
     <section className={`screen ${active ? 'active' : ''}`}>
@@ -24,41 +25,11 @@ function SignupScreen({ active, onBack }) {
           </div>
         </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <label className="form-field">
-            <span>Name</span>
-            <input
-              type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Jane Doe"
-              required
-            />
-          </label>
-          <label className="form-field">
-            <span>Email</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="jane@visla.com"
-              required
-            />
-          </label>
-          <label className="form-field">
-            <span>Password</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="********"
-              required
-            />
-          </label>
-          <button className="primary-btn form-submit" type="submit">
-            Create account
+        <div className="auth-form">
+          <button className="primary-btn form-submit" type="button" onClick={handleGoogleConnect}>
+            Connect Google
           </button>
-        </form>
+        </div>
       </div>
     </section>
   )

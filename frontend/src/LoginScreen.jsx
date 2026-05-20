@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 function LoginScreen({ active, onBack }) {
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [instagramUsername, setInstagramUsername] = useState('')
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -35,12 +35,12 @@ function LoginScreen({ active, onBack }) {
             />
           </label>
           <label className="form-field">
-            <span>Password</span>
+            <span>Instagram Username</span>
             <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="********"
+              type="text"
+              value={instagramUsername}
+              onChange={(event) => setInstagramUsername(event.target.value)}
+              placeholder="@username"
               required
             />
           </label>

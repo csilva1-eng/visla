@@ -1,6 +1,9 @@
 fastapi==0.136.1
+google_auth_oauthlib==1.4.0
+httpx==0.28.1
 protobuf==7.34.1
 python-dotenv==1.2.2
 python_dateutil==2.9.0.post0
+python_jose==3.5.0
 Requests==2.34.2
 SQLAlchemy==2.0.49

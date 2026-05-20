@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Request, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from database import get_db
+from db.database import get_db
 from bot import InstaBot
 from dependencies import get_current_user
-from auth import create_jwt
+from routers.auth import create_jwt
 from jose import jwt
 
 
