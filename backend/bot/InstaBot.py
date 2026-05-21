@@ -5,7 +5,6 @@ import base64
 import requests
 from google.cloud import vision
 import re
-from fastapi import Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import hmac, hashlib
@@ -14,99 +13,117 @@ from db.models import User
 load_dotenv()
 
 def handle_verify(
-    hub_mode: str = Query(alias="hub.mode"),
-    hub_challenge: str = Query(alias="hub.challenge"),
-    hub_verify_token: str = Query(alias="hub.verify_token")
+    hub_challenge: str,
+    hub_verify_token: str
 ):
     if hub_verify_token == os.getenv("VERIFY_TOKEN"):
         return PlainTextResponse(content=hub_challenge)
     return PlainTextResponse(status_code=403)
 
-SHAX_ID = os.getenv("SHAX_ID")
-#TODO THIS MIGHT NEED quotes?
-
 # @app.post("/webhook")
-async def handle_message(body: dict, instagram_id: str, db: AsyncSession):
+async def handle_message(body: dict, db: AsyncSession):
     
     try:
-        messaging = body.get('entry')[0]['messaging'][0]
-        if "read" in messaging:
-            return
-        if "delivery" in messaging:
-            return
+       
+        message = body.get('entry')[0]['messaging'][0]['message']
 
-        if "message" not in messaging:
-            return
-            
-        if messaging["message"].get("is_echo"):
-            return
-        # message_text = body.get("entry").get("messaging").get("message").get("text")
-        
-        result = await db.execute(select(User).where(User.instagram_id == str(instagram_id)))
-        user = result.scalar_one_or_none()
+        for attachment in message['attachments']:
+            if attachment['type'] == 'ig_post':
+                caption = attachment["payload"]["title"]
+                ig_post_media_id = attachment['payload']['ig_post_media_id']
+                date = extract_date_from_text(caption)
 
-        if not user:
-            return f"Welcome to Visla, to get started click {generate_onboarding_link(str(instagram_id))}"
-        
-        for entry in body.get("entry", []):
-            if entry.get("id") != SHAX_ID:
-                continue
+                if not date:
+                    image_url = attachment["payload"]['url']
+                    print("no date in text, trying image...")
+                    # trying to get from image
+                    date = await extract_date_from_image(image_url)
+                if date is None:
+                    return {"message": "Sorry I couldn't find the date, try sending it to me instead in this format '2026-07-25' ",
+                    "caption": caption, "date": None}
+               
+                formatted = date.strftime("%Y-%m-%dT%H:%M:%S")
+               
+                return {"date": formatted,
+                    "caption": caption, 'message': f"Date found: {date}"}
 
-            for event in entry.get("messaging", []):
-                sender_id = event.get("sender", {}).get("id")
-                message = event.get("message", {})
-                
-                text = message.get("text")
-                attachments = message.get("attachments", [])
 
-                if sender_id:
-                    if text:
-                        print(f"Message from {sender_id}: {text}")
-                    
-                    for attachment in attachments:
-                        if attachment.get("type") == "ig_post":
-                            image_url = attachment.get("payload", {}).get("url")
-                            title = attachment.get("payload", {}).get("title")
-
-                            date = extract_date_from_text(title)
-
-                            if not date:
-                                print("no date in text, trying image...")
-                                # trying to get from image
-                                date = await extract_date_from_image(image_url)
-                            return f"Date found: {date}"
-                            # print(f"Instagram post from {sender_id}: {image_url}")
-                        if attachment.get("type") == "image":
-                            image_url = attachment.get("payload", {}).get("url")
-                            print(f"Image from {sender_id}: {image_url}")
-        return ""
+        # if attachment.get("type") == "image":
+        #     image_url = attachment.get("payload", {}).get("url")
+        #     print(f"Image from {sender_id}: {image_url}")
+        return None
         # pretty sure this doesnt actually check if the date is returned just if error thrown
     except Exception as e:
         print(f"Error handling message: {e}")
-        return False
+        return None
 
+
+# TODO calendar needs this structure to be sent
+# {
+#     "title": "Indie Night at The Social",
+#     "location": "The Social, Orlando FL",
+#     "description": "Live music, $10 cover",
+#     "start_datetime": "2026-05-24T21:00:00",
+#     "end_datetime": "2026-05-24T23:00:00"
+# }
 
 def extract_date_from_text(text: str):
     if not text:
         return None
     try:
-        # common date patterns
-        patterns = [
+        datePatterns = [
             r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b',
             r'\b\d{4}[/-]\d{1,2}[/-]\d{1,2}\b',
             r'\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2},?\s+\d{4}\b',
             r'\b\d{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{4}\b',
             r'\b(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*,?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?\b',
-            r'\b\d{1,2}(?::\d{2})?(?:am|pm)?[-–]\d{1,2}(?::\d{2})?(?:am|pm)\b',
             r'\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?\b'
         ]
-        for pattern in patterns:
+
+        timePatterns = [
+            r'\b\d{1,2}:\d{2}\s*(?:am|pm)\b',           # 4:00pm, 4:00 pm
+            r'\b\d{1,2}\s*(?:am|pm)\b',                   # 4pm, 4 am
+            r'\b\d{1,2}:\d{2}\s*(?:am|pm)?\s*[-–]\s*\d{1,2}:\d{2}\s*(?:am|pm)\b',  # 4:00-5:00pm, 4:00pm-5:00pm
+            r'\b\d{1,2}\s*(?:am|pm)?\s*[-–]\s*\d{1,2}\s*(?:am|pm)\b',              # 4-5pm, 4pm-5pm
+            r'\b\d{1,2}:\d{2}\b',                         # 4:00 (no am/pm)
+            r'\b(?:noon|midnight)\b',                      # noon, midnight
+            r'\b\d{1,2}:\*{2}\s*(?:am|pm)\b'
+        ]
+
+        date_result = None
+        time_result = None
+
+        for pattern in datePatterns:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
-                return dateparser.parse(match.group())
-    except Exception:
+                date_result = dateparser.parse(match.group())
+                break
+
+        range_pattern = r'(\d{1,2})\s*[-–]\s*(\d{1,2})\s*(a\.?m\.?|p\.?m\.?)'
+        match = re.search(range_pattern, text, re.IGNORECASE)
+        if match:
+            start_hour = match.group(1)
+            meridiem_raw = match.group(3).replace(".", "").replace(" ", "").upper()
+            time_str = f"{start_hour} {meridiem_raw}"
+            time_result = dateparser.parse(time_str)
+        else:
+            for pattern in timePatterns:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    time_result = dateparser.parse(match.group())
+                    break
+
+        if date_result and time_result:
+            return date_result.replace(
+                hour=time_result.hour,
+                minute=time_result.minute
+            )
+        
+        return date_result  
+
+    except Exception as e:
+        print("Error in extract from text: ", e)
         return None
-    return None
 
 async def extract_date_from_image(image_url: str):
     try:

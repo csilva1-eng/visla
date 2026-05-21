@@ -128,8 +128,11 @@ async def google_callback(code: str, state: str, db: AsyncSession = Depends(get_
         token = create_jwt(user.id)
         print("trying to go back")
         return RedirectResponse(
-            f"{os.getenv('FRONTEND_URL')}/?token={token}"
+            f"{os.getenv('FRONTEND_URL')}/coming-soon/?token={token}"
         )
+        #TODO actual dashboard???
+
+
     except Exception as e:
         print(f"Error in Google callback: {e}")
         raise HTTPException(status_code=500, detail="Authentication failed")

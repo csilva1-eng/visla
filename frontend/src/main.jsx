@@ -3,13 +3,13 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import ConnectPage from './ConnectPage.jsx'
+import ComingSoon from './ComingSoon.jsx'
 
 createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <Routes>
         <Route path = "/" element= {<App/>}/>
-        <Route path = "/connect" element= {<ConnectPage/>}/>
+        <Route path = "/coming-soon" element = {<ComingSoon/>}/>
       </Routes>
     </BrowserRouter>
 )
