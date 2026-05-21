@@ -37,3 +37,4 @@
     - Have onboard link be sent when a user follows the account rather than send a first message
     - Have a introduction message for visla
     - Change the name from visla to something that makes more sense
+    - custom favicon
