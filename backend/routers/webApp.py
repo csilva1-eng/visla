@@ -3,10 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from db.database import get_db
 from bot import InstaBot
+from db.models import User
 from dependencies import get_current_user
 from routers.auth import create_jwt
 from jose import jwt
-
+from bot.calendar import list_events
 
 router = APIRouter(prefix = "/api")
 
@@ -69,6 +70,14 @@ async def login(request: Request, db: AsyncSession = Depends(get_db)):
         print(f"Error in login: {e}")
         return {"message": "Error occurred in login", "error": str(e)}
 
+@router.get("/test")
+async def test(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == 5))
+    user = result.scalar_one_or_none()
+
+    events = await list_events(user.google_refresh_token)
+    
+    return {"message": "Test successful"}
 
     
 

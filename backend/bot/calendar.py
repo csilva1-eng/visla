@@ -2,6 +2,8 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 def get_calendar_service(refresh_token: str):
     creds = Credentials(
@@ -45,4 +47,27 @@ async def create_event(refresh_token: str, event_details: dict):
 
     except Exception as e:
         print(f"Error creating calendar event: {e}")
+        return None
+
+async def list_events(refresh_token: str):
+    try:
+        service = get_calendar_service(refresh_token)
+        
+
+        #TODO in future make this be based on users current location? or location insta account is based in
+        now = datetime.now(ZoneInfo("America/New_York")).isoformat()
+        events_result = service.events().list(
+            calendarId="primary",
+            # timeMin=now,
+            timeMin="2026-01-01T00:00:00Z",
+            maxResults=10,
+            singleEvents=True,
+            orderBy="startTime"
+        ).execute()
+        
+        events = events_result.get("items", [])
+        return events
+
+    except Exception as e:
+        print(f"Error listing calendar events: {e}")
         return None

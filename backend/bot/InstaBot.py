@@ -26,7 +26,14 @@ async def handle_message(body: dict, db: AsyncSession):
     try:
        
         message = body.get('entry')[0]['messaging'][0]['message']
-
+        if message.get('text'):
+            date = extract_date_from_text(message['text'])
+            if date:
+                formatted = date.strftime("%Y-%m-%dT%H:%M:%S")
+                return {"date": formatted, 'message': f"on {date}",
+                    "caption": None}
+            
+        
         for attachment in message['attachments']:
             if attachment['type'] == 'ig_post':
                 caption = attachment["payload"]["title"]
@@ -36,7 +43,7 @@ async def handle_message(body: dict, db: AsyncSession):
                 if not date:
                     image_url = attachment["payload"]['url']
                     print("no date in text, trying image...")
-                    # trying to get from image
+                    
                     date = await extract_date_from_image(image_url)
                 if date is None:
                     return {"message": "Sorry I couldn't find the date, try sending it to me instead in this format '2026-07-25' ",
@@ -45,7 +52,7 @@ async def handle_message(body: dict, db: AsyncSession):
                 formatted = date.strftime("%Y-%m-%dT%H:%M:%S")
                
                 return {"date": formatted,
-                    "caption": caption, 'message': f"Date found: {date}"}
+                    "caption": caption, 'message': f"on {date}"}
 
 
         # if attachment.get("type") == "image":

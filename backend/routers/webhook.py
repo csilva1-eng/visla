@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Query
 from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Query
 import sys
 from bot import InstaBot
 from db.database import get_db
@@ -9,7 +8,7 @@ import httpx
 import os
 from navigator import client
 import json
-from bot.calendar import create_event
+from bot.calendar import create_event, list_events
 from sqlalchemy import select
 from db.models import User
 _current_sys_path = sys.path.copy()
@@ -30,8 +29,7 @@ async def receive_message( request: Request, db: AsyncSession = Depends(get_db))
     try:
 
         body = await request.json()
-
-        # handle cases here like if message is read or delivery confirmation, or if message is echo (sent by us) or if message doesnt exist (like postback or something)
+        
         entry = body.get("entry", [])
         if not entry:
             return None
@@ -63,14 +61,21 @@ async def receive_message( request: Request, db: AsyncSession = Depends(get_db))
             if val.get('caption'):
                 postEvent = json.loads(await get_event_details(val.get('caption')))
                 if postEvent:
-                    await create_event(user.google_refresh_token, {"title": postEvent["title"], "location": postEvent["location"], "description": postEvent["description"], "start_datetime": val.get('date'), "end_datetime": val.get('date')})
-                    val['message'] = f"{val.get('message')}for {postEvent} event"
-                    
-            await send_message(instagram_id, 'event made?')
+                    events = await list_events(user.google_refresh_token)
 
-        # instagram_id = str(body.get("entry")[0]["messaging"][0]["sender"]["id"])
-        # if val is None:
-        #     await send_message(instagram_id, "Sorry, that wasn't the right input or you haven't registered yet! Please send me a post to try and extract an event out of it, or if you haven't registered yet click here to get started: " + InstaBot.generate_onboarding_link(instagram_id))
+                    for event in events:
+                        if event["start"]["dateTime"] == val.get('date'):
+                            if event["summary"] == postEvent["title"]:
+                                await send_message(instagram_id, f"Event already exists on your calendar {val.get('message')}")
+                                return {"status": "ok"}
+                            await send_message(instagram_id, f"Another event already exists at that time, adding event anyway but please check your calendar!")
+                            #TODO later on maybe change this ask if they want to remove one of the events or keep both
+                            return {"status": "ok"}
+                    await create_event(user.google_refresh_token, {"title": postEvent["title"], "location": postEvent["location"], "description": postEvent["description"], "start_datetime": val.get('date'), "end_datetime": val.get('date')})
+                    val['message'] = f"{val.get('message')} for {postEvent['title']} event"
+                    await send_message(instagram_id, f"Event created on your calendar {val.get('message')}")
+                    return {"status": "ok"}
+
         return {"status": "ok"}
     except Exception as e:
         print("Caught error in receive message: ", e)
@@ -111,9 +116,9 @@ async def get_event_details(caption: str) -> dict:
                     "content": f"Caption: {caption}"
                 }
             ],
+            temperature = 0.0,
             response_format={"type": "json_object"}
         )
-        print(response.choices[0].message.content)
         output = response.choices[0].message.content
 
         return output
