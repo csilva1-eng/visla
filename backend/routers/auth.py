@@ -2,9 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-# from google_auth_oauthlib.flow import Flow
 from jose import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 from db.database import get_db
 from db.models import User
@@ -24,27 +23,10 @@ SCOPES = [
     "https://www.googleapis.com/auth/calendar"
 ]
 
-# def create_flow():
-#     flow = Flow.from_client_config(
-#         {
-#             "web": {
-#                 "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-#                 "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-#                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-#                 "token_uri": "https://oauth2.googleapis.com/token",
-#                 "redirect_uris": [os.getenv("GOOGLE_REDIRECT_URI")]
-#             }
-#         },
-#         scopes=SCOPES,
-#         redirect_uri=os.getenv("GOOGLE_REDIRECT_URI")
-#     )
-#     flow.oauth2session.code_challenge_method = None
-#     return flow
-
 def create_jwt(user_id: int):
     payload = {
         "sub": str(user_id),
-        "exp": datetime.utcnow() + timedelta(days=30)
+        "exp": datetime.now(timezone.utc) + timedelta(days=30)
     }
     return jwt.encode(payload, os.getenv("JWT_SECRET"), algorithm="HS256")
 
@@ -120,7 +102,7 @@ async def google_callback(code: str, state: str, db: AsyncSession = Depends(get_
             db.add(user)
         else:
             user.google_refresh_token = refresh_token
-            user.last_active = datetime.utcnow()
+            user.last_active = datetime.now(timezone.utc) + timedelta(days=30)
         print("committing to db...")
         await db.commit()
         await db.refresh(user)

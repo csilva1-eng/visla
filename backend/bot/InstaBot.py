@@ -21,7 +21,7 @@ def handle_verify(
     return PlainTextResponse(status_code=403)
 
 # @app.post("/webhook")
-async def handle_message(body: dict):
+def handle_message(body: dict):
     
     try:
        
@@ -37,14 +37,13 @@ async def handle_message(body: dict):
         for attachment in message['attachments']:
             if attachment['type'] == 'ig_post':
                 caption = attachment["payload"]["title"]
-                ig_post_media_id = attachment['payload']['ig_post_media_id']
                 date = extract_date_from_text(caption)
 
                 if not date:
                     image_url = attachment["payload"]['url']
                     print("no date in text, trying image...")
                     
-                    date = await extract_date_from_image(image_url)
+                    date = extract_date_from_image(image_url)
                 if date is None:
                     return {"message": "Sorry I couldn't find the date, try sending it to me instead in this format '2026-07-25' ",
                     "caption": caption, "date": None}
@@ -53,26 +52,12 @@ async def handle_message(body: dict):
                
                 return {"date": formatted,
                     "caption": caption, 'message': f"on {date}"}
-
-
-        # if attachment.get("type") == "image":
-        #     image_url = attachment.get("payload", {}).get("url")
-        #     print(f"Image from {sender_id}: {image_url}")
         return None
         # pretty sure this doesnt actually check if the date is returned just if error thrown
     except Exception as e:
         print(f"Error handling message: {e}")
         return None
 
-
-# TODO calendar needs this structure to be sent
-# {
-#     "title": "Indie Night at The Social",
-#     "location": "The Social, Orlando FL",
-#     "description": "Live music, $10 cover",
-#     "start_datetime": "2026-05-24T21:00:00",
-#     "end_datetime": "2026-05-24T23:00:00"
-# }
 
 def extract_date_from_text(text: str):
     if not text:
@@ -132,7 +117,7 @@ def extract_date_from_text(text: str):
         print("Error in extract from text: ", e)
         return None
 
-async def extract_date_from_image(image_url: str):
+def extract_date_from_image(image_url: str):
     try:
         res = requests.get(image_url)
         content = base64.b64encode(res.content).decode("utf-8")

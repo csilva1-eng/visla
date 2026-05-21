@@ -1,6 +1,7 @@
 fastapi==0.136.1
+google_api_python_client==2.196.0
 httpx==0.28.1
-openai==2.37.0
+openai==2.38.0
 protobuf==7.35.0
 python-dotenv==1.2.2
 python_dateutil==2.9.0.post0

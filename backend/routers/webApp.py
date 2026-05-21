@@ -75,7 +75,7 @@ async def test(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.id == 5))
     user = result.scalar_one_or_none()
 
-    events = await list_events(user.google_refresh_token)
+    events = list_events(user.google_refresh_token)
     
     return {"message": "Test successful"}
 

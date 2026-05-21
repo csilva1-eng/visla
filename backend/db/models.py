@@ -12,4 +12,3 @@ class User(Base):
     google_email = Column(String(255))
     created_at = Column(DateTime, default=func.now())
     last_active = Column(DateTime)
-    # is_onboarded = Column(Boolean, default=False)

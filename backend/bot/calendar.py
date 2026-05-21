@@ -5,6 +5,9 @@ import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+
+userTimezone = "America/New_York"
+
 def get_calendar_service(refresh_token: str):
     creds = Credentials(
         token=None,
@@ -19,7 +22,7 @@ def get_calendar_service(refresh_token: str):
     
     return build("calendar", "v3", credentials=creds)
 
-async def create_event(refresh_token: str, event_details: dict):
+def create_event(refresh_token: str, event_details: dict):
     try:
         service = get_calendar_service(refresh_token)
         
@@ -29,11 +32,11 @@ async def create_event(refresh_token: str, event_details: dict):
             "description": event_details.get("description"),
             "start": {
                 "dateTime": event_details.get("start_datetime"),
-                "timeZone": "America/New_York"
+                "timeZone": userTimezone
             },
             "end": {
                 "dateTime": event_details.get("end_datetime"),
-                "timeZone": "America/New_York"
+                "timeZone": userTimezone
             }
         }
 
@@ -49,17 +52,17 @@ async def create_event(refresh_token: str, event_details: dict):
         print(f"Error creating calendar event: {e}")
         return None
 
-async def list_events(refresh_token: str):
+def list_events(refresh_token: str):
     try:
         service = get_calendar_service(refresh_token)
         
 
         #TODO in future make this be based on users current location? or location insta account is based in
-        now = datetime.now(ZoneInfo("America/New_York")).isoformat()
+        now = datetime.now(ZoneInfo(userTimezone)).isoformat()
         events_result = service.events().list(
             calendarId="primary",
-            # timeMin=now,
-            timeMin="2026-01-01T00:00:00Z",
+            timeMin=now,
+            # timeMin="2026-01-01T00:00:00Z",
             maxResults=10,
             singleEvents=True,
             orderBy="startTime"

@@ -59,9 +59,9 @@ async def receive_message( request: Request, db: AsyncSession = Depends(get_db))
         
         if val and isinstance(val,dict) and val.get('message'):
             if val.get('caption'):
-                postEvent = json.loads(await get_event_details(val.get('caption')))
+                postEvent = json.loads(get_event_details(val.get('caption')))
                 if postEvent:
-                    events = await list_events(user.google_refresh_token)
+                    events = list_events(user.google_refresh_token)
 
                     for event in events:
                         if event["start"]["dateTime"] == val.get('date'):
