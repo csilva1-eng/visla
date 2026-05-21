@@ -55,7 +55,7 @@ async def receive_message( request: Request, db: AsyncSession = Depends(get_db))
             send_message(instagram_id, f"Welcome to Visla, to get started click {generate_onboarding_link(instagram_id)}")
             return {"status": "ok"}
 
-        val = await InstaBot.handle_message(body, db)
+        val = await InstaBot.handle_message(body)
         
         if val and isinstance(val,dict) and val.get('message'):
             if val.get('caption'):

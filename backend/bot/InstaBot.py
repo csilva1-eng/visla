@@ -21,7 +21,7 @@ def handle_verify(
     return PlainTextResponse(status_code=403)
 
 # @app.post("/webhook")
-async def handle_message(body: dict, db: AsyncSession):
+async def handle_message(body: dict):
     
     try:
        
